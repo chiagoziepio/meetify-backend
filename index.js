@@ -23,3 +23,7 @@ connc.on('error',(err)=>{
     console.log(`database error:${err}`);
     process.exit()
 })
+
+// routes
+
+app.use("/api/user", require("./routes/userRoute/users"))
