@@ -1,5 +1,6 @@
 const bcrypt =  require("bcryptjs")
 const {UserModel} =  require("../../model/schema")
+const jwt = require("jsonwebtoken")
 
 const handleRegisterUser = (async(req,res)=>{
     const {fullname,password,username,email,phone_number} = req.body
@@ -27,5 +28,26 @@ const handleRegisterUser = (async(req,res)=>{
     
     }
 })
+const handleUserLogin = (async(req,res)=>{
+   const {email,password} = req.body
+   if(!email || !password) return res.status(400).json({status: "failed", msg: "provide credential"});
+   
+   try {
+        const findUser = await UserModel.findOne({email})
+        if(!findUser) return res.status(400).json({status: "failed", msg: "user not registered" })
+        const checkPwd = await bcrypt.compare(password,findUser.password);
+        if(!checkPwd) return res.status(400).json({msg: "incorrect password", status: "failed" });
+        const accessToken = jwt.sign({email: findUser.email},process.env.ACCESSTOKEN_SECRET_KEY,{expiresIn:"5m"});
+        const refreshToken = jwt.sign({email:findUser.email},process.env.REFRESHTOKEN_SECRET_KEY,{expiresIn: "2h"});
+        
+        res.cookie("refreshToken",refreshToken,{maxAge: 7200000,sameSite: 'None'})
+        return res.status(200).json({status: "success", msg: "User logged in", accessToken: accessToken})
 
-module.exports = {handleRegisterUser}
+   } catch (error) {
+    console.log(error);
+    return res.status(500).json({status: "failed", msg: `server error: ${error}`})
+    
+   }
+})
+
+module.exports = {handleRegisterUser,handleUserLogin}
