@@ -26,6 +26,9 @@ const userSchema = mongoose.Schema({
     profilePic: {
         type: String,
     },
+    backgroundPic: {
+        type: String,
+    },
     friends: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
@@ -76,9 +79,9 @@ const postSchema = mongoose.Schema({
     content:{
         type: String
     },
-    postImage:{
+    postImages:[{
         type: String
-    },
+    }],
     comment: [commentSchema],
     likes: [likesSchema]
 })

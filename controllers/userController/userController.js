@@ -40,7 +40,7 @@ const handleUserLogin = (async(req,res)=>{
         const accessToken = jwt.sign({email: findUser.email},process.env.ACCESSTOKEN_SECRET_KEY,{expiresIn:"5m"});
         const refreshToken = jwt.sign({email:findUser.email},process.env.REFRESHTOKEN_SECRET_KEY,{expiresIn: "2h"});
         
-        res.cookie("refreshToken",refreshToken,{maxAge: 7200000,sameSite: 'None', secure: true})
+        res.cookie("refreshToken",refreshToken,{maxAge: 7200000,sameSite: 'None'})
         return res.status(200).json({status: "success", msg: "User logged in", accessToken: accessToken, user: findUser})
 
    } catch (error) {
