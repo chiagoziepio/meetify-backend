@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3001
 
 app.use(express.json())
 app.use(cors())
-
+app.use(cookieparser())
 mongoose.connect("mongodb://0.0.0.0/meetifydb")
 const connc = mongoose.connection
 connc.once('open',()=>{
