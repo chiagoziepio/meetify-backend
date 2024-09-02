@@ -25,9 +25,11 @@ const userSchema = mongoose.Schema({
     },
     profilePic: {
         type: String,
+        default: ""
     },
     backgroundPic: {
         type: String,
+        default: ""
     },
     friends: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -75,12 +77,15 @@ const postSchema = mongoose.Schema({
     },
     authorProfilePic: {
         type: String,
+        default: ""
     },
     content:{
-        type: String
+        type: String,
+        default: ""
     },
     postImages:[{
-        type: String
+        type: String,
+        default:  []
     }],
     comment: [commentSchema],
     likes: [likesSchema]
