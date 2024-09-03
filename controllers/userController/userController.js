@@ -42,11 +42,19 @@ const handleUserLogin = (async(req,res)=>{
         if(!findUser) return res.status(400).json({status: "failed", msg: "user not registered" })
         const checkPwd = await bcrypt.compare(password,findUser.password);
         if(!checkPwd) return res.status(400).json({msg: "incorrect password", status: "failed" });
-        const refreshToken = jwt.sign({email:findUser.email},process.env.REFRESHTOKEN_SECRET_KEY,{expiresIn: "2h"});
+        const refreshToken = jwt.sign({email:findUser.email},process.env.REFRESHTOKEN_SECRET_KEY,{expiresIn: "1h"});
         const userObj = {findUser, token: refreshToken}
        // res.cookie("refreshtoken",refreshToken,{maxAge: 1800000, httpOnly: true,sameSite: 'None'})
-        return res.status(200).json({status: "success", msg: "User logged in", user: userObj})
+       await UserModel.updateOne(
+        { email: email },
+        { $set: { 
+            
+            online: true,
+            lastActivity: Date.now()} }
+      );
 
+        return res.status(200).json({status: "success", msg: "User logged in", user: findUser, token: refreshToken})
+        
    } catch (error) {
     console.log(error);
     return res.status(500).json({status: "failed", msg: `server error: ${error}`})
@@ -74,16 +82,90 @@ const handleUserProfilePicUpload = (async(req,res)=>{
               });
               fs.unlinkSync(filePath)
         
-            const findUser = await UserModel.updateOne(
+             await UserModel.updateOne(
                 { email: email },
                 { $set: { 
                     profilePic: result.secure_url } }
               );
+
+              const updatedUser = await UserModel.findOne({email})
+
+            await UserModel.updateOne(
+                {email: email},
+                { $set: {
+                    lastActivity: Date.now(), online: true
+                }
+
+                }
+            )
             
-        return res.status(200).json({status: "success", msg: "image updated", url: result.secure_url})
+        return res.status(200).json({status: "success", msg: "image updated", user: updatedUser})
+    } catch (error) {
+        return res.status(501).json({status: "failed", msg: error})
+    }
+})
+const handleUserBackgroundPIcChange = (async(req,res)=>{
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
+    
+    
+    try {
+        if(!token) return res.status(401).json({status: "failed", msg: "access denied"})
+            const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY)
+            if(!decoded) return res.status(401).json({status: "failed", msg: "invalid token"})
+            const email =  decoded.email
+            if (!req.file) {
+                return res.status(400).send('No file uploaded.');
+            }
+            const filePath = req.file.path;
+            const result = await cloudinaryConfig.uploader.upload(filePath, {
+                folder: 'meetifyPic',
+              });
+            fs.unlinkSync(filePath)
+        
+             await UserModel.updateOne(
+                { email: email },
+                { $set: { 
+                    
+                    backgroundPic: result.secure_url } }
+              );
+
+            const updatedUser = await UserModel.findOne({email})
+            await UserModel.updateOne(
+                {email: email},
+                { $set: {
+                    lastActivity: Date.now(), online: true
+                }
+
+                }
+            )
+            
+        return res.status(200).json({status: "success", msg: "image updated", user: updatedUser})
     } catch (error) {
         return res.status(501).json({status: "failed", msg: error})
     }
 })
 
-module.exports = {handleRegisterUser,handleUserLogin,handleUserProfilePicUpload}
+const handleUserLogout = (async(req,res)=>{
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
+    try {
+        if(!token) return res.status(401).json({status: "failed", msg: "access denied"})
+            const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY)
+            if(!decoded) return res.status(401).json({status: "failed", msg: "invalid token"})
+            const email =  decoded.email;
+
+            await UserModel.updateOne(
+                {email: email},
+                { $set: {
+                     online: false
+                }
+
+                }
+            )
+            return res.status(200).json({status: "success", msg: "logged out", token: null}) 
+    } catch (error) {
+        
+    }
+})
+module.exports = {handleRegisterUser,handleUserLogin,handleUserProfilePicUpload, handleUserBackgroundPIcChange,handleUserLogout}

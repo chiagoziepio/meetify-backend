@@ -3,7 +3,7 @@ const mongoose = require("mongoose")
 const cors = require("cors")
 const cookieparser = require("cookie-parser")
 const dotenv = require("dotenv").config()
-
+const {checkUserInactivity} = require("./ActivityTab/UsersInactivity")
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -29,7 +29,15 @@ connc.on('error',(err)=>{
     console.log(`database error:${err}`);
     process.exit()
 })
+// checking inactive users
+setInterval(()=>checkUserInactivity(), 600000)
 
 // routes
 
 app.use("/api/user", require("./routes/userRoute/users"))
+
+process.on('exist', ()=>{
+    clearInterval(checkUserInactivity)
+    console.log("serving shutting down, cleaned up setInterval");
+    
+})

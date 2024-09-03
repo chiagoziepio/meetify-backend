@@ -43,6 +43,14 @@ const userSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post"
     }],
+    online: {
+        type: mongoose.Schema.Types.Boolean,
+        default: false
+    },
+    lastActivity:{
+        type: Date,
+        default: Date.now()
+    }
 })
 
 const commentSchema = mongoose.Schema({
