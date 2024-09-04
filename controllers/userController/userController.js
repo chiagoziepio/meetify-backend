@@ -168,4 +168,13 @@ const handleUserLogout = (async(req,res)=>{
         
     }
 })
-module.exports = {handleRegisterUser,handleUserLogin,handleUserProfilePicUpload, handleUserBackgroundPIcChange,handleUserLogout}
+const handleGetAllusers = (async(req,res)=>{
+    
+    try {
+        const allUsers = await UserModel.find()
+        return res.status(200).json({status: "success", msg: allUsers})
+    } catch (error) {
+        return res.status(500).json({status: "failed", msg: error})
+    }
+})
+module.exports = {handleRegisterUser,handleUserLogin,handleUserProfilePicUpload, handleUserBackgroundPIcChange,handleUserLogout, handleGetAllusers}
