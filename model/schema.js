@@ -98,7 +98,12 @@ const postSchema = mongoose.Schema({
     comment: [commentSchema],
     likes: [likesSchema]
 })
-
+userSchema.set('toJSON', {
+    transform: (doc, ret, options) => {
+      delete ret.password;
+      return ret;
+    },
+  });
 const UserModel = mongoose.model("User", userSchema);
 const PostModel = mongoose.model("Post", postSchema)
 

@@ -211,8 +211,13 @@ const handleUserLogout = async (req, res) => {
 };
 const handleGetAllusers = async (req, res) => {
   try {
-    const allUsers = await UserModel.find();
-    return res.status(200).json({ status: "success", msg: allUsers });
+    const users = await UserModel.find();
+    const allusers =  users.map(user => {
+      const userObject = user.toObject();
+      delete userObject.password; // Remove password field
+      return userObject;
+    });
+    return res.status(200).json({ status: "success", msg: allusers });
   } catch (error) {
     return res.status(500).json({ status: "failed", msg: error });
   }
@@ -334,6 +339,21 @@ const handleRemoveFriend = async (req, res) => {
     
   }
 };
+
+const handleGetActiveUsers = (async(req,res)=>{
+  try {
+    const users = await UserModel.find({online: true})
+    const activeUsers =  users.map(user => {
+      const userObject = user.toObject();
+      delete userObject.password; // Remove password field
+      return userObject;
+    });
+   return res.status(200).json({msg:activeUsers})
+  } catch (error) {
+    return res.status(500).json({msg:error})
+  }
+   
+})
 module.exports = {
   handleRegisterUser,
   handleUserLogin,
@@ -343,4 +363,5 @@ module.exports = {
   handleGetAllusers,
   handleAddFriends,
   handleRemoveFriend,
+  handleGetActiveUsers
 };

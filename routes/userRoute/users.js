@@ -9,6 +9,7 @@ const {
   handleGetAllusers,
   handleAddFriends,
   handleRemoveFriend,
+  handleGetActiveUsers
 } = require("../../controllers/userController/userController");
 const upload = require("../../config/multer");
 
@@ -28,4 +29,5 @@ router.post("/logout", handleUserLogout);
 router.post("/addfriend", handleAddFriends);
 router.post("/removefriend", handleRemoveFriend);
 router.get("/getallUser", handleGetAllusers);
+router.get("/getactiveusers", handleGetActiveUsers)
 module.exports = router;
