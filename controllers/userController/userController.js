@@ -207,7 +207,9 @@ const handleUserLogout = async (req, res) => {
     return res
       .status(200)
       .json({ status: "success", msg: "logged out", token: null });
-  } catch (error) {}
+  } catch (error) {
+    return res.status(500).json({status: "failed", msg: error})
+  }
 };
 const handleGetAllusers = async (req, res) => {
   try {

@@ -87,14 +87,18 @@ const postSchema = mongoose.Schema({
         type: String,
         default: ""
     },
+    authorEmail: {
+        type: String,
+        required: true
+    },
     content:{
         type: String,
         default: ""
     },
-    postImages:[{
+    postImage : {
         type: String,
-        default:  []
-    }],
+        default: ""
+    },
     comment: [commentSchema],
     likes: [likesSchema]
 })

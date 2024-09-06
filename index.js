@@ -35,6 +35,7 @@ setInterval(()=>checkUserInactivity(), 600000)
 // routes
 
 app.use("/api/user", require("./routes/userRoute/users"))
+app.use("/api/feeds",require("./routes/FeedsRoute/feeds"))
 
 process.on('exist', ()=>{
     clearInterval(checkUserInactivity)
