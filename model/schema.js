@@ -68,16 +68,6 @@ const commentSchema = mongoose.Schema({
     }
 })
 
-const likesSchema = mongoose.Schema({
-    likedBy:[{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    }],
-    count: {
-        type: Number,
-        default: 0
-    }
-})
 const postSchema = mongoose.Schema({
     authorName :{
         type: String,
@@ -100,7 +90,20 @@ const postSchema = mongoose.Schema({
         default: ""
     },
     comment: [commentSchema],
-    likes: [likesSchema]
+    likedBy: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
+    ],
+    likes: {
+        type: Number,
+        default: 0
+    },
+    postedAt : {
+        type : Date,
+        default : Date.now()
+    }
 })
 userSchema.set('toJSON', {
     transform: (doc, ret, options) => {
