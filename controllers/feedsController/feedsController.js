@@ -86,7 +86,7 @@ const handleGetFeeds = async (req, res) => {
       .status(201)
       .json({ status: "success", msg: "new feeds", feeds: allFeeds });
   } catch (error) {
-    return res.status(500), json({ status: "failed", msg: error });
+    return res.status(500).json({ status: "failed", msg: error });
   }
 };
 
@@ -151,8 +151,53 @@ const handleLikePost = async (req, res) => {
   }
 };
 
+const handlePostComment = async(req,res)=>{
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { id,content } = req.body;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    if (!id)
+      return res.status(400).json({ status: "failed", msg: "no id passed" });
+    const findPost = await PostModel.findById(id);
+    const findUser = await UserModel.findOne({email});
+    if (!findPost)
+      return res.status(400).json({ status: "failed", msg: "invalid feed id" });
+    if (!findUser)
+      return res
+        .status(400)
+        .json({ status: "failed", msg: "user doest exist" });
+    findPost.comment.push({
+      commentedBy: findUser.username,
+      content: content,
+      commentAuthorPic : findUser.profilePic ? findUser.profilePic : ""
+    })
+    await findPost.save()
+    const allFeeds = await PostModel.find()
+    await UserModel.updateOne(
+      { email: email },
+      {
+        $set: {
+          lastActivity: Date.now(),
+          online: true,
+        },
+      }
+    );
+
+    return res.status(201).json({status: "success", feeds: allFeeds})
+  } catch (error) {
+    return res.status(500).json({status: "failed" , msg: error})
+  }
+}
+
 module.exports = {
   handleAddFeed,
   handleGetFeeds,
   handleLikePost,
+  handlePostComment
 };
