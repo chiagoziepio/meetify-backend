@@ -66,6 +66,10 @@ const commentSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    commentAuthorId:{
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
     date:{
         type: Date,
         default : Date.now
@@ -83,6 +87,10 @@ const postSchema = mongoose.Schema({
     },
     authorEmail: {
         type: String,
+        required: true
+    },
+    authorId: {
+        type: mongoose.Schema.Types.ObjectId,
         required: true
     },
     content:{

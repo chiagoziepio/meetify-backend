@@ -35,6 +35,7 @@ const handleAddFeed = async (req, res) => {
       authorEmail: findUser.email,
       content: content ? content : "",
       postImage: file ? url.secure_url : "",
+      authorId : findUser._id
     });
 
     await newPost.save();
@@ -175,7 +176,8 @@ const handlePostComment = async(req,res)=>{
     findPost.comment.push({
       commentedBy: findUser.username,
       content: content,
-      commentAuthorPic : findUser.profilePic ? findUser.profilePic : ""
+      commentAuthorPic : findUser.profilePic ? findUser.profilePic : "",
+      commentAuthorId : findUser._id
     })
     await findPost.save()
     const allFeeds = await PostModel.find()
