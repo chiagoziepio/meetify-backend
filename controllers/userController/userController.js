@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const { UserModel } = require("../../model/schema");
+const { UserModel, PostModel } = require("../../model/schema");
 const jwt = require("jsonwebtoken");
 const handleverifyToken = require("../../middleware/verifyJwt");
 const cloudinaryConfig = require("../../config/cloudinaryConfig");
@@ -73,14 +73,12 @@ const handleUserLogin = async (req, res) => {
       }
     );
 
-    return res
-      .status(200)
-      .json({
-        status: "success",
-        msg: "User logged in",
-        user: findUser,
-        token: refreshToken,
-      });
+    return res.status(200).json({
+      status: "success",
+      msg: "User logged in",
+      user: findUser,
+      token: refreshToken,
+    });
   } catch (error) {
     console.log(error);
     return res
@@ -119,6 +117,15 @@ const handleUserProfilePicUpload = async (req, res) => {
     );
 
     const updatedUser = await UserModel.findOne({ email });
+
+    await PostModel.updateMany(
+      { authorId: updatedUser._id },
+      {
+        $set: {
+          authorProfilePic: updatedUser.profilePic,
+        },
+      }
+    );
 
     await UserModel.updateOne(
       { email: email },
@@ -208,13 +215,13 @@ const handleUserLogout = async (req, res) => {
       .status(200)
       .json({ status: "success", msg: "logged out", token: null });
   } catch (error) {
-    return res.status(500).json({status: "failed", msg: error})
+    return res.status(500).json({ status: "failed", msg: error });
   }
 };
 const handleGetAllusers = async (req, res) => {
   try {
     const users = await UserModel.find();
-    const allusers =  users.map(user => {
+    const allusers = users.map((user) => {
       const userObject = user.toObject();
       delete userObject.password; // Remove password field
       return userObject;
@@ -265,13 +272,11 @@ const handleAddFriends = async (req, res) => {
       }
     );
     const updatedUser = await UserModel.findOne({ email });
-    return res
-      .status(201)
-      .json({
-        status: "success",
-        msg: "Added to friends list",
-        user: updatedUser,
-      });
+    return res.status(201).json({
+      status: "success",
+      msg: "Added to friends list",
+      user: updatedUser,
+    });
   } catch (error) {
     return res.status(500).json({ status: "failed", msg: error });
   }
@@ -305,20 +310,23 @@ const handleRemoveFriend = async (req, res) => {
       { _id: LoggedInUser._id },
       { $pull: { friends: findUser._id } },
       { new: true } // Return the updated document
-  );
+    );
     const result2 = await UserModel.findOneAndUpdate(
       { _id: findUser._id },
       { $pull: { friends: LoggedInUser._id } },
       { new: true } // Return the updated document
-  );
-  if (!result1) {
-    return res.status(400).json({status: "failed" , msg: "friend not removed"})
-} 
-  if (!result2) {
-    return res.status(400).json({status: "failed" , msg: "friend2 not removed"})
-} 
+    );
+    if (!result1) {
+      return res
+        .status(400)
+        .json({ status: "failed", msg: "friend not removed" });
+    }
+    if (!result2) {
+      return res
+        .status(400)
+        .json({ status: "failed", msg: "friend2 not removed" });
+    }
 
-    
     await UserModel.updateOne(
       { email: email },
       {
@@ -327,35 +335,95 @@ const handleRemoveFriend = async (req, res) => {
           online: true,
         },
       }
-    ); 
-    return res
-      .status(200)
-      .json({
-        status: "success",
-        msg: "Removed from friends list",
-        user: result1,
-      }); 
+    );
+    return res.status(200).json({
+      status: "success",
+      msg: "Removed from friends list",
+      user: result1,
+    });
   } catch (error) {
     return res.status(500).json({ status: "failed", msg: error });
-   
-    
   }
 };
 
-const handleGetActiveUsers = (async(req,res)=>{
+const handleGetActiveUsers = async (req, res) => {
   try {
-    const users = await UserModel.find({online: true})
-    const activeUsers =  users.map(user => {
+    const users = await UserModel.find({ online: true });
+    const activeUsers = users.map((user) => {
       const userObject = user.toObject();
       delete userObject.password; // Remove password field
       return userObject;
     });
-   return res.status(200).json({msg:activeUsers})
+    return res.status(200).json({ msg: activeUsers });
   } catch (error) {
-    return res.status(500).json({msg:error})
+    return res.status(500).json({ msg: error });
   }
-   
-})
+};
+
+const handleUpdateUserDetails = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { fullname, username, email } = req.body;
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const initialEmail = decoded.email;
+    const findUser = await UserModel.findOne({ email: initialEmail });
+    if (!findUser)
+      return res.status(400).json({ status: "failed", msg: "user not found" });
+    if (findUser.email !== email) {
+      const isEmailAlreadyExisting = await UserModel.findOne({ email });
+      if (isEmailAlreadyExisting)
+        return res
+          .status(403)
+          .json({ status: "failed", msg: "email already taken" });
+    }
+
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { _id: findUser._id },
+      {
+        $set: {
+          fullname,
+          username: username,
+          email: email,
+          lastActivity: Date.now(),
+          online: true,
+        },
+      },
+      { new: true }
+    );
+
+    await PostModel.updateMany(
+      { authorId: findUser._id },
+      {
+        $set: {
+          authorEmail: updatedUser.email,
+          authorName: updatedUser.username,
+        },
+      }
+    );
+
+    const refreshToken = jwt.sign(
+      { email: updatedUser.email },
+      process.env.REFRESHTOKEN_SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+    return res
+      .status(200)
+      .json({
+        status: "success",
+        msg: "details updated",
+        user: updatedUser,
+        token: refreshToken,
+      });
+  } catch (error) {
+    return res.status(500).json({ status: "failed", msg: error });
+  }
+};
 module.exports = {
   handleRegisterUser,
   handleUserLogin,
@@ -365,5 +433,6 @@ module.exports = {
   handleGetAllusers,
   handleAddFriends,
   handleRemoveFriend,
-  handleGetActiveUsers
+  handleGetActiveUsers,
+  handleUpdateUserDetails,
 };
