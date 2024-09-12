@@ -117,6 +117,18 @@ const postSchema = mongoose.Schema({
         default : Date.now()
     }
 })
+const messageSchema = mongoose.Schema({
+    senderId:{ 
+        type: String
+    },
+    recipientId:{ 
+        type: String
+    },
+    content: { 
+        type: String
+    },
+    timestamp: { type: Date, default: Date.now },
+  });
 userSchema.set('toJSON', {
     transform: (doc, ret, options) => {
       delete ret.password;
@@ -125,5 +137,6 @@ userSchema.set('toJSON', {
   });
 const UserModel = mongoose.model("User", userSchema);
 const PostModel = mongoose.model("Post", postSchema)
+const MessageModel = mongoose.model("message", messageSchema)
 
-module.exports = {UserModel, PostModel}
+module.exports = {UserModel, PostModel, MessageModel}
