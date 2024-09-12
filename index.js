@@ -70,6 +70,15 @@ io.on('connection', (socket) => {
                 toUserId,
                 timestamp: new Date().toISOString()
             });
+            await UserModel.updateOne(
+                { _id: fromUserId},
+                {
+                  $set: {
+                    lastActivity: Date.now(),
+                    online: true,
+                  },
+                }
+              );
         } catch (err) {
             console.error('Error saving message:', err);
         }

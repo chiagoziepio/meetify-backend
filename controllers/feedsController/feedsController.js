@@ -197,9 +197,50 @@ const handlePostComment = async(req,res)=>{
   }
 }
 
+const  handleDeletePost = async(req,res)=>{
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { id } = req.body;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    if (!id)
+      return res.status(400).json({ status: "failed", msg: "no id passed" });
+    const findPost = await PostModel.findById(id);
+    const findUser = await UserModel.findOne({email});
+    if (!findPost)
+      return res.status(400).json({ status: "failed", msg: "invalid feed id" });
+    if (!findUser)
+      return res
+        .status(400)
+        .json({ status: "failed", msg: "user doest exist" });
+
+    await PostModel.findByIdAndDelete(findPost._id)
+    
+    const allFeeds = await PostModel.find()
+
+    await UserModel.updateOne(
+      { email: email },
+      {
+        $set: {
+          lastActivity: Date.now(),
+          online: true,
+        },
+      }
+    );
+    return res.status(200).json({status: "success" , msg: "post deleted" , feeds : allFeeds});
+  } catch (error) {
+    return res.status(500).json({status: "failed", msg: error });
+  }
+}
 module.exports = {
   handleAddFeed,
   handleGetFeeds,
   handleLikePost,
-  handlePostComment
+  handlePostComment,
+  handleDeletePost
 };
