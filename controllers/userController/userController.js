@@ -412,20 +412,18 @@ const handleUpdateUserDetails = async (req, res) => {
       process.env.REFRESHTOKEN_SECRET_KEY,
       { expiresIn: "1h" }
     );
-    return res
-      .status(200)
-      .json({
-        status: "success",
-        msg: "details updated",
-        user: updatedUser,
-        token: refreshToken,
-      });
+    return res.status(200).json({
+      status: "success",
+      msg: "details updated",
+      user: updatedUser,
+      token: refreshToken,
+    });
   } catch (error) {
     return res.status(500).json({ status: "failed", msg: error });
   }
 };
 
-const handleResetPwd = async(req,res)=>{
+const handleResetPwd = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader ? authHeader.split(" ")[1] : null;
   const { password } = req.body;
@@ -440,12 +438,12 @@ const handleResetPwd = async(req,res)=>{
     if (!findUser)
       return res.status(400).json({ status: "failed", msg: "user not found" });
 
-    const hashPwd = await bcrypt.hash(password, 10)
-     await UserModel.findOneAndUpdate(
+    const hashPwd = await bcrypt.hash(password, 10);
+    await UserModel.findOneAndUpdate(
       { _id: findUser._id },
       {
         $set: {
-          password : hashPwd,
+          password: hashPwd,
           lastActivity: Date.now(),
           online: true,
         },
@@ -453,16 +451,42 @@ const handleResetPwd = async(req,res)=>{
       { new: true }
     );
 
-    return res
-      .status(200)
-      .json({
-        status: "success",
-        msg: "password updated",
-      });
+    return res.status(200).json({
+      status: "success",
+      msg: "password updated",
+    });
   } catch (error) {
     return res.status(500).json({ status: "failed", msg: error });
   }
-}
+};
+const handleDeleteAcc = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await UserModel.findOne({ email });
+    if (!findUser)
+      return res.status(400).json({ status: "failed", msg: "user not found" });
+
+    await UserModel.updateMany(
+      { friends: findUser._id }, // Find documents where the friends array contains the userId
+      { $pull: { friends: findUser._id } } // Remove userId from the friends array
+    ).exec();
+
+    await PostModel.deleteMany({ authorId: findUser._id });
+
+    await UserModel.findByIdAndDelete(findUser._id);
+
+    return res.status(200).json({ msg: "account delete" });
+  } catch (error) {
+    return res.status(500).json({ msg: error });
+  }
+};
 module.exports = {
   handleRegisterUser,
   handleUserLogin,
@@ -474,5 +498,6 @@ module.exports = {
   handleRemoveFriend,
   handleGetActiveUsers,
   handleUpdateUserDetails,
-  handleResetPwd
+  handleResetPwd,
+  handleDeleteAcc,
 };
