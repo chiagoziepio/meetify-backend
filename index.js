@@ -6,7 +6,7 @@ const dotenv = require("dotenv").config()
 const {checkUserInactivity} = require("./ActivityTab/UsersInactivity")
 const http = require('http');
 const socketIo = require('socket.io');
-const{ MessageModel} = require("./model/schema")
+const{ MessageModel, UserModel} = require("./model/schema")
 
 const app = express()
 const server = http.createServer(app);
@@ -56,13 +56,13 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat message', async ({ toUserId, msg, fromUserId }) => {
-        const message = new MessageModel({
+        /* const message = new MessageModel({
             senderId: fromUserId,
             recipientId: toUserId,
             content: msg,
-        });
+        }); */
         try {
-            await message.save();
+           // await message.save();
             // Emit a structured message object
             io.to(toUserId).emit('chat message', {
                 content: msg,
@@ -90,6 +90,7 @@ io.on('connection', (socket) => {
 
 app.use("/api/user", require("./routes/userRoute/users"))
 app.use("/api/feeds",require("./routes/FeedsRoute/feeds"))
+app.use("/api/message", require("./routes/messageRoute/message"))
 
 process.on('exist', ()=>{
     clearInterval(checkUserInactivity)
