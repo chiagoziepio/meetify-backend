@@ -7,6 +7,7 @@ const { v2: uuidv2 } = require("uuid"); // For generating unique filenames
 const streamifier = require("streamifier"); // Convert buffer to stream
 const { handleTokenVerification } = require("../../middleware/verifyJwt");
 const fs = require("fs");
+const nodemailer = require("nodemailer");
 
 const handleRegisterUser = async (req, res) => {
   const { fullname, password, username, email, phone_number } = req.body;
@@ -487,6 +488,98 @@ const handleDeleteAcc = async (req, res) => {
     return res.status(500).json({ msg: error });
   }
 };
+
+const handleForgotPwd = async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email)
+      return res
+        .status(400)
+        .json({ msg: "no email provoded", status: "failed" });
+    const findUser = await UserModel.findOne({ email });
+    if (!findUser)
+      return res
+        .status(401)
+        .json({ status: "failed", msg: "Email  not registered" });
+    const pwdResetToken = jwt.sign(
+      { email: findUser.email },
+      process.env.REFRESHTOKEN_SECRET_KEY,
+      { expiresIn: "7m" }
+    );
+
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSKEY,
+      },
+    });
+    let mailOptions = {
+      from: process.env.EMAIL,
+      to: findUser.email,
+      subject: "Meetify Account Password Reset",
+      text: `You requested a password reset for your Meetify account.\n\n
+  Please click the link below to reset your password:\n
+  http://localhost:5173/forgotpassword/${pwdResetToken}\n\n
+  If you did not request this, please ignore this email.`,
+    };
+
+    // Send email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return
+      }
+      //console.log("Email sent: " + info.response);
+    });
+
+    return res.status(200).json({ msg: "Email sent", status: "success" });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({ msg: error.message, status: "failed" });
+  }
+};
+
+const handleOutsidePwdReset = async (req, res) => {
+  const { password } = req.body;
+  const { resetToken } = req.params;
+  try {
+    if (!resetToken)
+      return res
+        .status(401)
+        .json({ status: "failed", msg: "no token provided" });
+    if (!password)
+      return res
+        .status(400)
+        .json({ status: "failed", msg: "No password passed" });
+
+    const decoded = jwt.verify(resetToken, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await UserModel.findOne({ email });
+    if (!findUser)
+      return res.status(401).json({ status: "failed", msg: "no user found" });
+    const hashPwd = await bcrypt.hash(password, 10);
+    await UserModel.updateOne(
+      { _id: findUser._id },
+      {
+        $set: {
+          password: hashPwd,
+        },
+      }
+    );
+    return res.status(200).json({ status: "success", msg: "Password changed" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
 module.exports = {
   handleRegisterUser,
   handleUserLogin,
@@ -500,4 +593,6 @@ module.exports = {
   handleUpdateUserDetails,
   handleResetPwd,
   handleDeleteAcc,
+  handleForgotPwd,
+  handleOutsidePwdReset,
 };

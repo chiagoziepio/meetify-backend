@@ -12,7 +12,9 @@ const {
   handleGetActiveUsers,
   handleUpdateUserDetails,
   handleResetPwd,
-  handleDeleteAcc
+  handleDeleteAcc,
+  handleForgotPwd,
+  handleOutsidePwdReset
 } = require("../../controllers/userController/userController");
 const upload = require("../../config/multer");
 
@@ -36,4 +38,6 @@ router.get("/getactiveusers", handleGetActiveUsers)
 router.post("/edituser",  handleUpdateUserDetails)
 router.post("/resetpassword" , handleResetPwd)
 router.post("/deleteaccount", handleDeleteAcc)
+router.post("/forgotpassword", handleForgotPwd)
+router.post("/forgotpassword/:resetToken", handleOutsidePwdReset )
 module.exports = router;
