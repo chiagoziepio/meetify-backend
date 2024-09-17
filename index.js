@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
 app.use("/api/user", require("./routes/userRoute/users"))
 app.use("/api/feeds",require("./routes/FeedsRoute/feeds"))
 app.use("/api/message", require("./routes/messageRoute/message"))
-
+app.use("/api/admin", require("./routes/AdminRoute/adminRoute"))
 process.on('exist', ()=>{
     clearInterval(checkUserInactivity)
     console.log("serving shutting down, cleaned up setInterval");

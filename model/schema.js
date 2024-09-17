@@ -31,6 +31,10 @@ const userSchema = mongoose.Schema({
         type: String,
         default: ""
     },
+    role: {
+        type: String,
+        default: "user"
+    },
     friends: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
@@ -49,7 +53,11 @@ const userSchema = mongoose.Schema({
     },
     lastActivity:{
         type: Date,
-        default: Date.now()
+        default: Date.now
+    },
+    signUpDate: {
+        type: Date,
+        default: Date.now
     }
 })
 
@@ -114,7 +122,7 @@ const postSchema = mongoose.Schema({
     },
     postedAt : {
         type : Date,
-        default : Date.now()
+        default : Date.now
     }
 })
 const messageSchema = mongoose.Schema({

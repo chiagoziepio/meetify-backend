@@ -142,7 +142,13 @@ const handleUserProfilePicUpload = async (req, res) => {
       .status(200)
       .json({ status: "success", msg: "image updated", user: updatedUser });
   } catch (error) {
-    return res.status(501).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 const handleUserBackgroundPIcChange = async (req, res) => {
@@ -189,7 +195,13 @@ const handleUserBackgroundPIcChange = async (req, res) => {
       .status(200)
       .json({ status: "success", msg: "image updated", user: updatedUser });
   } catch (error) {
-    return res.status(501).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
@@ -216,7 +228,13 @@ const handleUserLogout = async (req, res) => {
       .status(200)
       .json({ status: "success", msg: "logged out", token: null });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 const handleGetAllusers = async (req, res) => {
@@ -279,7 +297,13 @@ const handleAddFriends = async (req, res) => {
       user: updatedUser,
     });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 const handleRemoveFriend = async (req, res) => {
@@ -343,7 +367,13 @@ const handleRemoveFriend = async (req, res) => {
       user: result1,
     });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
@@ -420,7 +450,13 @@ const handleUpdateUserDetails = async (req, res) => {
       token: refreshToken,
     });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
@@ -457,7 +493,13 @@ const handleResetPwd = async (req, res) => {
       msg: "password updated",
     });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 const handleDeleteAcc = async (req, res) => {
@@ -485,7 +527,13 @@ const handleDeleteAcc = async (req, res) => {
 
     return res.status(200).json({ msg: "account delete" });
   } catch (error) {
-    return res.status(500).json({ msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
