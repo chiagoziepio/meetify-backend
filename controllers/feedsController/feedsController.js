@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { PostModel, UserModel } = require("../../model/schema");
-const cloudinaryConfig = require("../../config/cloudinaryConfig");
+const uploadToCloudinary = require("../../config/cloudinaryConfig");
 const fs = require("fs");
 const handleAddFeed = async (req, res) => {
   const authHeader = req.headers.authorization;
@@ -21,12 +21,11 @@ const handleAddFeed = async (req, res) => {
         .json({ status: "failed", msg: "Not a registered user" });
     let url;
     if (file) {
-      const filePath = req.file.path;
-      const result = await cloudinaryConfig.uploader.upload(filePath, {
-        folder: "meetifyPic",
-      });
+      const fileBuffer = req.file.buffer;
+      const result = await uploadToCloudinary(fileBuffer);
+  
       url = result;
-      fs.unlinkSync(filePath);
+    
     }
 
     const newPost = new PostModel({
@@ -55,7 +54,13 @@ const handleAddFeed = async (req, res) => {
       .status(201)
       .json({ status: "success", msg: "feed created", feeds: allPosts });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
@@ -87,7 +92,13 @@ const handleGetFeeds = async (req, res) => {
       .status(201)
       .json({ status: "success", msg: "new feeds", feeds: allFeeds });
   } catch (error) {
-    return res.status(500).json({ status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
@@ -148,7 +159,13 @@ const handleLikePost = async (req, res) => {
     );
     return res.status(200).json({status: "success" , msg: "likes updated" , feeds : allFeeds});
   } catch (error) {
-    return res.status(500).json({status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 };
 
@@ -193,7 +210,13 @@ const handlePostComment = async(req,res)=>{
 
     return res.status(201).json({status: "success", feeds: allFeeds})
   } catch (error) {
-    return res.status(500).json({status: "failed" , msg: error})
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 }
 
@@ -234,7 +257,13 @@ const  handleDeletePost = async(req,res)=>{
     );
     return res.status(200).json({status: "success" , msg: "post deleted" , feeds : allFeeds});
   } catch (error) {
-    return res.status(500).json({status: "failed", msg: error });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
   }
 }
 module.exports = {

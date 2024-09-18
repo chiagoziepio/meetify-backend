@@ -1,5 +1,5 @@
 const { UserModel, PostModel } = require("../../model/schema");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
 const handleGetWeeklySinup = async (req, res) => {
   try {
@@ -76,7 +76,7 @@ const DeletePost = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader ? authHeader.split(" ")[1] : null;
   const { id } = req.body;
- 
+
   try {
     if (!token)
       return res.status(401).json({ status: "failed", msg: "access denied" });
@@ -95,7 +95,10 @@ const DeletePost = async (req, res) => {
         .status(404)
         .json({ status: "failed", msg: "not a valid post id" });
     await PostModel.findByIdAndDelete(id);
-    return res.status(200).json({ status: "success", msg: "post deleted" });
+    const allFeeds = await PostModel.find();
+    return res
+      .status(200)
+      .json({ status: "success", msg: "post deleted", feeds: allFeeds });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res
@@ -106,4 +109,49 @@ const DeletePost = async (req, res) => {
     }
   }
 };
-module.exports = { handleGetWeeklySinup, handleGetWeeklyPost, DeletePost };
+const deleteUser = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { id } = req.body;
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const email = decoded.email;
+    const findUser = await UserModel.findOne({ email });
+    if (!findUser || findUser.role !== "admin")
+      return res.status(401).json({ status: "failed", msg: "not authorized" });
+    if (!id)
+      return res.status(400).json({ status: "failed", msg: "no id passed" });
+    const aboutToBeDelUser = await UserModel.findById(id);
+    if (!aboutToBeDelUser)
+      return res
+        .status(404)
+        .json({ status: "failed", msg: "not a valid post id" });
+
+    await UserModel.updateMany(
+      { friends: aboutToBeDelUser._id }, // Find documents where the friends array contains the userId
+      { $pull: { friends: aboutToBeDelUser._id } } // Remove userId from the friends array
+    ).exec();
+
+    await PostModel.deleteMany({ authorId: aboutToBeDelUser._id });
+    await UserModel.findByIdAndDelete(id);
+
+    const allUsers = await UserModel.find();
+    return res
+    .status(200)
+    .json({ status: "success", msg: "User Account deleted", users: allUsers });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+module.exports = { handleGetWeeklySinup, handleGetWeeklyPost, DeletePost, deleteUser };

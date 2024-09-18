@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const { UserModel, PostModel } = require("../../model/schema");
 const jwt = require("jsonwebtoken");
 const handleverifyToken = require("../../middleware/verifyJwt");
-const cloudinaryConfig = require("../../config/cloudinaryConfig");
+const uploadToCloudinary = require("../../config/cloudinaryConfig");
 const { v2: uuidv2 } = require("uuid"); // For generating unique filenames
 const streamifier = require("streamifier"); // Convert buffer to stream
 const { handleTokenVerification } = require("../../middleware/verifyJwt");
@@ -102,11 +102,8 @@ const handleUserProfilePicUpload = async (req, res) => {
     if (!req.file) {
       return res.status(400).send("No file uploaded.");
     }
-    const filePath = req.file.path;
-    const result = await cloudinaryConfig.uploader.upload(filePath, {
-      folder: "meetifyPic",
-    });
-    fs.unlinkSync(filePath);
+    const fileBuffer = req.file.buffer;
+    const result = await uploadToCloudinary(fileBuffer);
 
     await UserModel.updateOne(
       { email: email },
@@ -165,11 +162,9 @@ const handleUserBackgroundPIcChange = async (req, res) => {
     if (!req.file) {
       return res.status(400).send("No file uploaded.");
     }
-    const filePath = req.file.path;
-    const result = await cloudinaryConfig.uploader.upload(filePath, {
-      folder: "meetifyPic",
-    });
-    fs.unlinkSync(filePath);
+    const fileBuffer = req.file.buffer;
+    const result = await uploadToCloudinary(fileBuffer);
+
 
     await UserModel.updateOne(
       { email: email },
