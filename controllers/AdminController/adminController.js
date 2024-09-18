@@ -1,6 +1,7 @@
 const { UserModel, PostModel } = require("../../model/schema");
 const jwt = require("jsonwebtoken");
-
+const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
 const handleGetWeeklySinup = async (req, res) => {
   try {
     const oneYearAgo = new Date();
@@ -85,7 +86,7 @@ const DeletePost = async (req, res) => {
       return res.status(401).json({ status: "failed", msg: "invalid token" });
     const email = decoded.email;
     const findUser = await UserModel.findOne({ email });
-    if (!findUser || findUser.role !== "admin")
+    if (!findUser || findUser.role !== "admin" || !findUser.role !== "super-admin")
       return res.status(401).json({ status: "failed", msg: "not authorized" });
     if (!id)
       return res.status(400).json({ status: "failed", msg: "no id passed" });
@@ -122,7 +123,7 @@ const deleteUser = async (req, res) => {
       return res.status(401).json({ status: "failed", msg: "invalid token" });
     const email = decoded.email;
     const findUser = await UserModel.findOne({ email });
-    if (!findUser || findUser.role !== "admin")
+    if (!findUser || findUser.role !== "admin"  || !findUser.role !== "super-admin")
       return res.status(401).json({ status: "failed", msg: "not authorized" });
     if (!id)
       return res.status(400).json({ status: "failed", msg: "no id passed" });
@@ -142,8 +143,12 @@ const deleteUser = async (req, res) => {
 
     const allUsers = await UserModel.find();
     return res
-    .status(200)
-    .json({ status: "success", msg: "User Account deleted", users: allUsers });
+      .status(200)
+      .json({
+        status: "success",
+        msg: "User Account deleted",
+        users: allUsers,
+      });
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res
@@ -154,4 +159,82 @@ const deleteUser = async (req, res) => {
     }
   }
 };
-module.exports = { handleGetWeeklySinup, handleGetWeeklyPost, DeletePost, deleteUser };
+
+const adminCreateUser = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(" ")[1] : null;
+  const { fullname, password, username, email, phone_number, role } = req.body;
+  if (!fullname || !password || !username || !email || !phone_number || !role)
+    return res.status(400).json({ status: "failed", msg: "Fill all blank" });
+
+  try {
+    if (!token)
+      return res.status(401).json({ status: "failed", msg: "access denied" });
+    const decoded = jwt.verify(token, process.env.REFRESHTOKEN_SECRET_KEY);
+    if (!decoded)
+      return res.status(401).json({ status: "failed", msg: "invalid token" });
+    const AdminEmail = decoded.email;
+    const findUser = await UserModel.findOne({ email: AdminEmail });
+    if (!findUser || findUser.role !== "admin" || !findUser.role !== "super-admin")
+      return res.status(401).json({ status: "failed", msg: "not authorized" });
+
+    const isUserAlreadyExisting = await UserModel.findOne({ email });
+    if (isUserAlreadyExisting)
+      return res
+        .status(400)
+        .json({ status: "failed", msg: "user already existed" });
+
+    const hashPwd = await bcrypt.hash(password, 10);
+    const newUser = new UserModel({
+      fullname,
+      username,
+      email,
+      phone: +phone_number,
+      password: hashPwd,
+      role: role,
+    });
+    await newUser.save();
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSKEY,
+      },
+    });
+    let mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Meetify Account Creation",
+      text: `An Account has been created for you.\n\n
+      Your credentials are : \n Email : ${email} \n Password : ${password} \n
+  Please click the link below to login in:\n
+  http://localhost:5173\n\n`,
+    };
+
+    // Send email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return;
+      }
+      //console.log("Email sent: " + info.response);
+    });
+    return res
+      .status(201)
+      .json({ msg: "Account Created and Email sent", status: "success" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(500)
+        .json({ status: "failed", msg: "token has expired" });
+    } else {
+      return res.status(500).json({ status: "failed", msg: error.message });
+    }
+  }
+};
+module.exports = {
+  handleGetWeeklySinup,
+  handleGetWeeklyPost,
+  DeletePost,
+  deleteUser,
+  adminCreateUser
+};

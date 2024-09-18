@@ -225,8 +225,8 @@ const handleUserLogout = async (req, res) => {
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res
-        .status(500)
-        .json({ status: "failed", msg: "token has expired" });
+        .status(401)
+        .json({ status: "failed", msg: "access denied" });
     } else {
       return res.status(500).json({ status: "failed", msg: error.message });
     }
