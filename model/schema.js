@@ -71,8 +71,7 @@ const commentSchema = mongoose.Schema({
         required: true
     },
     commentAuthorPic:{
-        type: String,
-        required: true
+        type: String
     },
     commentAuthorId:{
         type: mongoose.Schema.Types.ObjectId,
