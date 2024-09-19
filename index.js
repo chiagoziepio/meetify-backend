@@ -21,7 +21,7 @@ app.use(cors({
     credentials: true
 }))
 app.use(cookieparser())
-mongoose.connect("mongodb://0.0.0.0/meetifydb")
+/* mongoose.connect("mongodb://0.0.0.0/meetifydb")
 const connc = mongoose.connection
 connc.once('open',()=>{
     console.log('connected to database');
@@ -33,7 +33,16 @@ connc.once('open',()=>{
 connc.on('error',(err)=>{
     console.log(`database error:${err}`);
     process.exit()
-})
+}) */
+mongoose.connect(process.env.MONGODB_URI)
+    .then((e)=> 
+        console.log("connected to databse"),
+        server.listen(PORT , ()=>{
+            console.log(`app runing on port : ${PORT}`);
+        })
+    ).catch((error)=>
+    console.log(`failed to connect : ${error}`)
+)
 // checking inactive users
 setInterval(()=>checkUserInactivity(), 600000)
 
