@@ -16,7 +16,8 @@ const PORT = process.env.PORT || 3001
 app.use(express.json())
 app.use(cors({
     origin:[
-        'http://localhost:5173'
+        'http://localhost:5173',
+        'https://meetify-pearl.vercel.app'
     ],
     credentials: true
 }))
@@ -50,7 +51,7 @@ setInterval(()=>checkUserInactivity(), 600000)
 // Initialize socket.io
 const io = socketIo(server, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: 'https://meetify-pearl.vercel.app',
         methods: ['GET', 'POST'],
         credentials: true
     }
