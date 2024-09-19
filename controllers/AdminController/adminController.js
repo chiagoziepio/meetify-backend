@@ -208,7 +208,7 @@ const adminCreateUser = async (req, res) => {
       text: `An Account has been created for you.\n\n
       Your credentials are : \n Email : ${email} \n Password : ${password} \n
   Please click the link below to login in:\n
-  http://localhost:5173\n\n`,
+  https://meetify-pearl.vercel.app\n\n`,
     };
 
     // Send email

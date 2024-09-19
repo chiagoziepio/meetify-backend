@@ -563,7 +563,7 @@ const handleForgotPwd = async (req, res) => {
       subject: "Meetify Account Password Reset",
       text: `You requested a password reset for your Meetify account.\n\n
   Please click the link below to reset your password:\n
-  http://localhost:5173/forgotpassword/${pwdResetToken}\n\n
+  https://meetify-pearl.vercel.app/${pwdResetToken}\n\n
   If you did not request this, please ignore this email.`,
     };
 
